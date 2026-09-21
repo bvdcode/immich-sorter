@@ -26,8 +26,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker run --detach --name sorter-test --publish 127.0.0.1:3000:3000 \
-            --env LOCAL_MODE=true --env APP_URL=http://localhost:3000 immich-sorter:test
+          docker run --detach --name sorter-test --publish 127.0.0.1:3000:3000 immich-sorter:test
           trap 'docker logs sorter-test; docker rm --force sorter-test' EXIT
           curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 2 \
             --max-time 5 --retry-max-time 60 \

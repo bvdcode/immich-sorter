@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { connectionSchema, editSchema, filtersSchema, presetSchema, presetsSchema } from '@/lib/contracts';
 import { Immich, albumNameSchema } from '@/server/immich';
-import { normalizeInstance, openSession, requireOrigin, scopeFor, sealSession } from '@/server/security';
+import { normalizeInstance, openSession, requireWriteRequest, scopeFor, sealSession } from '@/server/security';
 import { Storage } from '@/server/storage';
 import { syncSchema, syncStep } from '@/server/sync';
 import { revision, saveReview } from '@/server/review';
@@ -19,7 +19,7 @@ async function dispatch(request: Request, context: Context) {
   const route = path.join('/');
   const url = new URL(request.url);
   const jar = await cookies();
-  if (request.method !== 'GET') { requireOrigin(request); }
+  const writeOrigin = request.method === 'GET' ? null : requireWriteRequest(request);
   if (route === 'connect' && request.method === 'POST') {
     const input = connectionSchema.parse(await request.json());
     const instance = normalizeInstance(input.instance);
@@ -28,7 +28,7 @@ async function dispatch(request: Request, context: Context) {
     const session = { ...input, instance, userId: user.id, name: user.name,
       expires: Date.now() + days * 86400000, scope: scopeFor(instance, user.id, input.key) };
     jar.set(COOKIE, sealSession(session), { httpOnly: true, sameSite: 'strict', path: '/',
-      secure: new URL(process.env.APP_URL ?? request.url).protocol === 'https:',
+      secure: writeOrigin?.protocol === 'https:',
       ...(input.remember ? { maxAge: days * 86400 } : {}) });
     return json({ connected: true });
   }
@@ -115,7 +115,8 @@ async function handle(request: Request, context: Context) {
     const message = error instanceof Error ? error.message : 'requestFailed';
     if (message === 'unauthorized') { return json({ error: message }, 401); }
     if (message === 'conflict') { return json({ error: message }, 409); }
-    const publicErrors = new Set(['invalidInstance', 'instanceNotAllowed', 'configureOrigins', 'invalidOrigin',
+    if (message === 'invalidOrigin') { return json({ error: message }, 403); }
+    const publicErrors = new Set(['invalidInstance',
       'invalidDate', 'ambiguousDate', 'albumWriteFailed', 'duplicateProcessed', 'verificationFailed', 'indexRequired']);
     if (publicErrors.has(message)) { return json({ error: message }, 400); }
     if (/^upstream:\d{3}$/.test(message)) { return json({ error: message }, 502); }

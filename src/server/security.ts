@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { sessionSchema, type Session } from '@/lib/contracts';
+import { WRITE_REQUEST_HEADER } from '../lib/request-headers';
 import { dataDirectory } from './storage';
 
 export function normalizeInstance(value: string) {
@@ -11,11 +12,6 @@ export function normalizeInstance(value: string) {
   }
   url.pathname = url.pathname.replace(/\/+$/, '').replace(/\/api$/, '');
   const instance = url.toString().replace(/\/$/, '');
-  const allowed = (process.env.IMMICH_ALLOWED_ORIGINS ?? '').split(',').map((v) => v.trim()).filter(Boolean);
-  if (allowed.length && !allowed.includes(url.origin)) { throw new Error('instanceNotAllowed'); }
-  if (process.env.NODE_ENV === 'production' && !allowed.length && process.env.LOCAL_MODE !== 'true') {
-    throw new Error('configureOrigins');
-  }
   return instance;
 }
 
@@ -50,8 +46,16 @@ export function openSession(token: string): Session {
 export function scopeFor(instance: string, user: string, key: string) {
   return createHash('sha256').update(`${instance}\n${user}\n${key}`).digest('hex');
 }
-export function requireOrigin(request: Request) {
+export function requireWriteRequest(request: Request): URL {
+  const site = request.headers.get('sec-fetch-site');
+  if (request.headers.get(WRITE_REQUEST_HEADER) !== '1' || (site !== null && site !== 'same-origin')) {
+    throw new Error('invalidOrigin');
+  }
   const origin = request.headers.get('origin');
-  const expected = process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin;
-  if (origin !== expected) { throw new Error('invalidOrigin'); }
+  if (!origin || !URL.canParse(origin)) { throw new Error('invalidOrigin'); }
+  const url = new URL(origin);
+  if (!['http:', 'https:'].includes(url.protocol) || url.origin !== origin) {
+    throw new Error('invalidOrigin');
+  }
+  return url;
 }

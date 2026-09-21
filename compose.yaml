@@ -3,9 +3,6 @@ services:
     image: bvdcode/immich-sorter:latest
     ports:
       - "127.0.0.1:3000:3000"
-    environment:
-      LOCAL_MODE: "true"
-      APP_URL: "http://localhost:3000"
     volumes:
       - sorter-data:/app/data
     restart: unless-stopped

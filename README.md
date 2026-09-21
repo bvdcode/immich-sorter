@@ -35,7 +35,6 @@ After the first successful publication, run the prebuilt image without cloning o
 ```sh
 docker run -d --name immich-sorter --restart unless-stopped \
   -p 127.0.0.1:3000:3000 \
-  -e LOCAL_MODE=true -e APP_URL=http://localhost:3000 \
   -v sorter-data:/app/data \
   bvdcode/immich-sorter:latest
 ```
@@ -62,7 +61,9 @@ Credentials are encrypted with AES-256-GCM inside an HttpOnly, SameSite=Strict c
 
 ## Hosted deployment
 
-Use HTTPS and set `APP_URL` to the public application URL. Set `LOCAL_MODE=false` and `IMMICH_ALLOWED_ORIGINS` to a comma-separated list of trusted Immich origins, for example `https://photos.example.com`. The server refuses arbitrary instance origins in this mode. Keep the data volume private. Configure the reverse proxy to forward to port 3000 and retain the real request origin.
+No application URL, deployment mode or instance allowlist is required. Enter the Immich URL and API key in the interface. For hosted use, put the application behind HTTPS and restrict access to trusted users with your reverse proxy or VPN. Keep the data volume private and forward requests to port 3000 without rewriting the browser's Origin header. HTTPS browser connections receive Secure session cookies, including when the proxy connects to the container over HTTP.
+
+Write requests require a custom browser request header. Cross-origin requests are not granted CORS permission, and cross-site Fetch Metadata requests are rejected. Do not configure the proxy to allow cross-origin API requests. Users who can access the application can connect to HTTP(S) endpoints reachable from its server; do not expose it as an unrestricted public proxy.
 
 This release is intended for trusted personal or household deployments. Internet-wide multi-tenant hosting, registration, connection rate limiting, private-network egress isolation, and arbitrary-instance public hosting are not implemented.
 
