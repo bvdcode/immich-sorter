@@ -29,7 +29,8 @@ jobs:
           docker run --detach --name cleaner-test --publish 127.0.0.1:3000:3000 \
             --env LOCAL_MODE=true --env APP_URL=http://localhost:3000 immich-cleaner:test
           trap 'docker logs cleaner-test; docker rm --force cleaner-test' EXIT
-          curl --fail --silent --show-error --retry 15 --retry-connrefused --retry-delay 2 \
+          curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 2 \
+            --max-time 5 --retry-max-time 60 \
             http://localhost:3000/ --output /dev/null
       - name: Check Docker Hub configuration
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
