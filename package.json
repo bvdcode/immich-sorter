@@ -1,0 +1,25 @@
+{
+  "name": "immich-cleaner",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "npm run lint && next build",
+    "start": "next start --hostname 127.0.0.1",
+    "lint": "eslint . && node scripts/check-styles.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "next": "16.3.5", "react": "19.3.0", "react-dom": "19.3.0",
+    "@mui/material": "9.4.0", "@mui/material-nextjs": "9.4.0",
+    "@emotion/react": "^11.14.0", "@emotion/styled": "^11.14.0", "@emotion/cache": "^11.14.0",
+    "@tanstack/react-query": "^5.90.0", "zod": "^4.0.0", "luxon": "^3.7.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0", "@types/node": "^24.0.0", "@types/react": "^19.0.0", "@types/react-dom": "^19.0.0",
+    "@types/luxon": "^3.7.0", "eslint": "^9.0.0", "eslint-config-next": "16.3.5",
+    "typescript-eslint": "^8.0.0", "vitest": "^4.0.0", "@playwright/test": "^1.58.0"
+  }
+}
