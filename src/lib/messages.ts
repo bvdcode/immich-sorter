@@ -1,5 +1,5 @@
 export const en = {
-  brand: 'Immich Cleaner', tagline: 'A little order. A lot of memories.',
+  brand: 'Immich Sorter', tagline: 'A little order. A lot of memories.',
   connectTitle: 'Make room for the story', connectIntro: 'Review your photos and videos. Put dates, places and albums back where they belong.',
   instance: 'Immich instance URL', apiKey: 'API key', remember: 'Remember this connection for 30 days',
   connect: 'Connect to library', connectionHint: 'Your key stays encrypted in an HttpOnly cookie. Media is loaded through this server.',
@@ -45,7 +45,7 @@ export const en = {
 };
 export type MessageKey = keyof typeof en;
 export const ru: Record<MessageKey, string> = {
-  brand: 'Immich Cleaner', tagline: 'Больше порядка. Больше воспоминаний.',
+  brand: 'Immich Sorter', tagline: 'Больше порядка. Больше воспоминаний.',
   connectTitle: 'У каждого кадра — своя история', connectIntro: 'Разбирайте фото и видео. Восстанавливайте даты, места и альбомы.',
   instance: 'Адрес Immich', apiKey: 'API-ключ', remember: 'Запомнить подключение на 30 дней', connect: 'Подключить медиатеку',
   connectionHint: 'Ключ хранится зашифрованным в HttpOnly cookie. Медиа загружается через сервер приложения.',

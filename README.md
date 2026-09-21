@@ -1,4 +1,4 @@
-# Immich Cleaner
+# Immich Sorter
 
 A self-hosted review desk for Immich photos and videos. Restore dates and locations, add media to multiple albums, and write descriptions in one place.
 
@@ -33,10 +33,10 @@ The Checks workflow publishes on pushes to `main` and manual runs on `main`, aft
 After the first successful publication, run the prebuilt image without cloning or building:
 
 ```sh
-docker run -d --name immich-cleaner --restart unless-stopped \
+docker run -d --name immich-sorter --restart unless-stopped \
   -p 127.0.0.1:3000:3000 \
   -e LOCAL_MODE=true -e APP_URL=http://localhost:3000 \
-  -v cleaner-data:/app/data \
+  -v sorter-data:/app/data \
   bvdcode/immich-sorter:latest
 ```
 

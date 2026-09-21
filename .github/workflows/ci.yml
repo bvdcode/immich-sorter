@@ -21,14 +21,14 @@ jobs:
       - run: npm run test
       - run: npm run build
       - run: npm run typecheck
-      - run: docker build -t immich-cleaner:test .
+      - run: docker build -t immich-sorter:test .
       - name: Check container startup
         shell: bash
         run: |
           set -euo pipefail
-          docker run --detach --name cleaner-test --publish 127.0.0.1:3000:3000 \
-            --env LOCAL_MODE=true --env APP_URL=http://localhost:3000 immich-cleaner:test
-          trap 'docker logs cleaner-test; docker rm --force cleaner-test' EXIT
+          docker run --detach --name sorter-test --publish 127.0.0.1:3000:3000 \
+            --env LOCAL_MODE=true --env APP_URL=http://localhost:3000 immich-sorter:test
+          trap 'docker logs sorter-test; docker rm --force sorter-test' EXIT
           curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 2 \
             --max-time 5 --retry-max-time 60 \
             http://localhost:3000/ --output /dev/null
@@ -56,7 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           image="docker.io/$DOCKERHUB_USERNAME/immich-sorter"
-          docker tag immich-cleaner:test "$image:sha-$GITHUB_SHA"
-          docker tag immich-cleaner:test "$image:latest"
+          docker tag immich-sorter:test "$image:sha-$GITHUB_SHA"
+          docker tag immich-sorter:test "$image:latest"
           docker push "$image:sha-$GITHUB_SHA"
           docker push "$image:latest"

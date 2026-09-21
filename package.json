@@ -1,5 +1,5 @@
 {
-  "name": "immich-cleaner",
+  "name": "immich-sorter",
   "version": "0.1.0",
   "private": true,
   "engines": { "node": ">=24.0.0" },

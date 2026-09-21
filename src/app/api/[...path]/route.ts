@@ -10,7 +10,7 @@ import { DateTime } from 'luxon';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-const COOKIE = 'immich-cleaner-session';
+const COOKIE = 'immich-sorter-session';
 type Context = { params: Promise<{ path: string[] }> };
 const json = (value: object, status = 200) => Response.json(value, { status, headers: { 'Cache-Control': 'no-store' } });
 
