@@ -5,10 +5,13 @@ A self-hosted review desk for Immich photos and videos. Restore dates and locati
 ## Run with Docker
 
 ```sh
-docker compose up --build -d
+docker compose pull
+docker compose up -d
 ```
 
 Open http://localhost:3000, enter your Immich instance URL and API key, then build the library index. The default Compose configuration binds only to the local computer.
+
+The prebuilt image is published as `bvdcode/immich-sorter:latest`. To build from source instead, run `docker build -t bvdcode/immich-sorter:latest .` before `docker compose up -d`.
 
 ## Development
 
@@ -20,6 +23,22 @@ npm run dev
 ```
 
 The interface supports English and Russian. No external media service is used.
+
+## Docker Hub publication
+
+Set the GitHub repository variable `DOCKERHUB_USERNAME` to the Docker Hub account name and the Actions secret `DOCKERHUB_TOKEN` to a Docker Hub personal access token with Read & Write permissions. The destination repository is `<account>/immich-sorter`; create it as public in Docker Hub.
+
+The Checks workflow publishes on pushes to `main` and manual runs on `main`, after tests, lint, type checking, image build and container startup checks succeed. Pull requests never publish. The exact tested Linux AMD64 image is uploaded with `latest` and `sha-<full commit SHA>` tags.
+
+After the first successful publication, run the prebuilt image without cloning or building:
+
+```sh
+docker run -d --name immich-cleaner --restart unless-stopped \
+  -p 127.0.0.1:3000:3000 \
+  -e LOCAL_MODE=true -e APP_URL=http://localhost:3000 \
+  -v cleaner-data:/app/data \
+  bvdcode/immich-sorter:latest
+```
 
 ## Review workflow
 
