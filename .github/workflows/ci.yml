@@ -26,11 +26,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker run --detach --name sorter-test --publish 127.0.0.1:3000:3000 immich-sorter:test
-          trap 'docker logs sorter-test; docker rm --force sorter-test' EXIT
+          docker volume create sorter-test-data
+          docker run --detach --name sorter-test --publish 127.0.0.1:3000:3000 \
+            --mount source=sorter-test-data,target=/app/data immich-sorter:test
+          trap 'docker logs sorter-test; docker rm --force sorter-test; docker volume rm sorter-test-data' EXIT
           curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 2 \
             --max-time 5 --retry-max-time 60 \
             http://localhost:3000/ --output /dev/null
+          docker exec sorter-test sh -lc 'test "$(awk "/^Uid:/{print \$2}" /proc/1/status)" = 1000'
+          docker exec --user node sorter-test sh -lc 'touch /app/data/.write-test && rm /app/data/.write-test'
       - name: Check Docker Hub configuration
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
