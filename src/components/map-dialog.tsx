@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Map, { Marker, NavigationControl, type MapLayerMouseEvent, type MarkerEvent } from 'react-map-gl/maplibre';
+import { setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress,
   MenuItem, Stack, TextField, Typography, useMediaQuery, useTheme } from '@mui/material';
@@ -9,6 +10,8 @@ import { api, mapConfigSchema, markersSchema } from '@/lib/api';
 import { placeSchema, type Asset, type MapMarker } from '@/lib/contracts';
 import type { LocationValue } from '@/lib/group-contracts';
 import { useErrorText, useLocale } from './providers';
+
+setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 
 const WINDOWS = [1, 3, 14];
 const MARKER_LIMIT = 500;
@@ -80,7 +83,7 @@ export function MapDialog({ assets, close, onPick }: {
         {loading && <LinearProgress />}
         {(config.error || markers.error) && <Alert severity="error">{errorText(config.error ?? markers.error)}</Alert>}
         {!loading && config.data && <Box sx={{ height: { xs: 360, sm: 440, md: 520 }, borderRadius: 1, overflow: 'hidden' }}>
-          <Map mapStyle={config.data.styleUrl} initialViewState={view} reuseMaps
+          <Map mapStyle={config.data.styleUrl} initialViewState={view}
             onClick={(event: MapLayerMouseEvent) => setPoint({ latitude: event.lngLat.lat, longitude: event.lngLat.lng })}>
             <NavigationControl position="top-right" showCompass={false} />
             {shown.map((marker) => <Marker key={marker.id} longitude={marker.lon} latitude={marker.lat}

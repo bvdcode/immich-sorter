@@ -6,12 +6,13 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1",
-    "build": "npm run lint && next build",
+    "dev": "npm run map-worker && next dev --hostname 127.0.0.1",
+    "build": "npm run lint && npm run map-worker && next build",
     "start": "next start --hostname 127.0.0.1",
     "lint": "eslint . && node scripts/check-styles.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "map-worker": "node scripts/copy-map-worker.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",

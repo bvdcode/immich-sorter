@@ -9,3 +9,4 @@ AGENTS.md
 *.tsbuildinfo
 test-results/
 playwright-report/
+public/maplibre/
