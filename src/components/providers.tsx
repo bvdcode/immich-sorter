@@ -13,7 +13,8 @@ const theme = createTheme({
   typography: { fontFamily: 'Arial, Helvetica, sans-serif', h3: { fontWeight: 600, letterSpacing: '-0.04em' },
     h5: { fontWeight: 600 }, button: { textTransform: 'none', fontWeight: 600 } },
   shape: { borderRadius: 12 },
-  components: { MuiButton: { defaultProps: { disableElevation: true } }, MuiTextField: { defaultProps: { size: 'small' } } },
+  components: { MuiButton: { defaultProps: { disableElevation: true } }, MuiTextField: { defaultProps: { size: 'small' } },
+    MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } } },
 });
 const LocaleContext = createContext<{ language: Language; setLanguage: (value: Language) => void; t: (key: MessageKey) => string } | null>(null);
 const themes = { en: createTheme(theme, enUS), ru: createTheme(theme, ruRU) };

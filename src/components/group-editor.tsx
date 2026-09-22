@@ -10,7 +10,7 @@ import { useErrorText, useLocale } from './providers';
 import { AlbumPicker } from './album-picker';
 import { GroupDate, dateDraftReady, emptyDateDraft, toDateIntent } from './group-date';
 import { GroupLocation } from './group-location';
-import { GroupPreview } from './group-preview';
+import { GroupPreviewDialog } from './group-preview';
 
 export function GroupEditor({ group, zone, onApplied }: {
   group: Asset[]; zone: string; onApplied: (result: GroupResult) => void;
@@ -39,8 +39,6 @@ export function GroupEditor({ group, zone, onApplied }: {
     return intent;
   }
 
-  const current = JSON.stringify(buildIntent());
-  const fresh = pending !== null && JSON.stringify(pending.intent) === current;
   const ready = group.length > 0 && dateDraftReady(date)
     && (location !== null || date.enabled || albums.length > 0 || description.trim() !== '');
 
@@ -76,19 +74,13 @@ export function GroupEditor({ group, zone, onApplied }: {
           control={<Switch checked={overwriteDescription} onChange={(_, value) => setOverwriteDescription(value)} />} />}
       </Stack>
       {group.length === 0 && <Alert severity="info">{t('groupEmpty')}</Alert>}
-      {(preview.error || apply.error || known.error) && <Alert severity="error">
-        {errorText(preview.error ?? apply.error ?? known.error)}
-      </Alert>}
-      <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ gap: 1 }}>
-        <Button variant="outlined" disabled={!ready || busy} onClick={() => preview.mutate()}>
-          {preview.isPending ? t('loading') : t('previewChanges')}
-        </Button>
-        <Button fullWidth variant="contained" disabled={!fresh || busy} onClick={() => apply.mutate()}>
-          {apply.isPending ? t('applying') : `${t('applyGroup')} · ${group.length}`}
-        </Button>
-      </Stack>
+      {(preview.error || known.error) && <Alert severity="error">{errorText(preview.error ?? known.error)}</Alert>}
+      <Button fullWidth variant="contained" disabled={!ready || busy} onClick={() => preview.mutate()}>
+        {preview.isPending ? t('loading') : `${t('previewChanges')} · ${group.length}`}
+      </Button>
       <Typography variant="caption" color="text.secondary">{t('processedHint')}</Typography>
-      {fresh && pending && <><Divider /><GroupPreview plan={pending.plan} albums={albums} /></>}
+      {pending && <GroupPreviewDialog plan={pending.plan} albums={albums} applying={apply.isPending}
+        error={apply.error} close={() => setPending(null)} onApply={() => apply.mutate()} />}
     </Stack>
   </Paper>;
 }
