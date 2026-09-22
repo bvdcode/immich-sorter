@@ -43,22 +43,34 @@ docker run -d --name immich-sorter --restart unless-stopped \
 
 Group review takes a whole event in one pass. The current frame is shown with its neighbours, found by visual
 similarity, by capture time within a chosen window, or by position in the library index. Clicking a frame adds it to
-the group and shift-clicking takes the whole run between two frames.
+the group and shift-clicking takes the whole run between two frames. Neighbours arrive a page at a time, with a
+button for more.
 
 One panel then sets the group's place, dates, albums and description. A place is picked from a map that opens on the
 area the group covers: every photo already placed around that time is drawn as a circle, and clicking one reuses its
 exact coordinates. Clicking anywhere else drops a free point, which is named by reverse geocoding and can be saved as
 a place for later. The map style comes from the Immich instance's own configuration.
 
-Dates are distributed across the group rather than copied. `Intervals` moves the whole run so one known-good frame
-lands on its correct time while every real gap is preserved. `Step` runs from an anchor frame at a fixed interval.
-`Range` spreads the group evenly between a first and a last time. Frame order is taken from filenames or from stored
-dates; filename order is the reliable one when a camera clock was wrong. A frame with no capture time is reported
-rather than given an invented one, and a local time that daylight saving skipped or repeated is reported per frame.
+Dates are distributed across the group rather than copied. `Range`, the default, spreads the group evenly between a
+first and a last time; pressing `From` or `To` on a card takes that frame's own time and its own time zone, so a
+neighbour can supply the value without joining the group and without receiving the group's place. `Step` runs from an
+anchor frame at a fixed interval. `Intervals` moves the whole run so one known-good frame lands on its correct time
+while every real gap is preserved; its anchor has to be one of the selected frames, because the shift is measured from
+that frame's current time. Frame order is taken from filenames or from stored dates; filename order is the reliable one
+when a camera clock was wrong. A frame with no capture time is reported rather than given an invented one, and a local
+time that daylight saving skipped or repeated is reported per frame.
 
-Existing values are kept by default: a frame that already has coordinates, a date that no longer needs review, or a
-description that is already written is left alone unless the matching switch is turned on. Nothing is written until
-the preview lists, frame by frame, what changes and why a frame is skipped. Applying writes the group in the fewest
+The time zone answers itself: picking a point on the map derives it from the coordinates, and pressing `From` on a
+frame takes the zone that frame carries, or the offset it was stored with when it names none. Times are entered in a
+24-hour field, so a display locale cannot turn a filled-in value into an empty one.
+
+Existing coordinates and descriptions are kept by default and replaced only when the matching switch is turned on.
+Dates work the other way: choosing a method for a hand-picked group is already a statement that its dates are wrong,
+so every selected frame is rewritten unless `Keep dates that already look right` is turned on. A date counts as right
+when nothing contradicts it, which an import timestamp never does.
+
+Nothing is written until the preview lists, frame by frame, what changes and why a frame is skipped; a preview that
+cannot be built yet says what is missing instead of leaving a dead button. Applying writes the group in the fewest
 requests the API allows, reads every frame back, and adds only the verified ones to `Processed`. A frame whose
 read-back does not match stays outside `Processed` and is reported.
 
@@ -98,7 +110,7 @@ npm run build
 npm run typecheck
 ```
 
-Tests cover timestamp parsing, time distribution across a group, daylight-saving gaps and overlaps, skip and overwrite rules per field, request batching, filter semantics, connection isolation, encrypted sessions, write-origin protection, stale edits, partial writes and the order of the Processed marker. CI also builds the Docker image.
+Tests cover timestamp parsing, time distribution across a group, daylight-saving gaps and overlaps, skip and overwrite rules per field, time zones derived from stored offsets, request batching, filter semantics, connection isolation, encrypted sessions, write-origin protection, stale edits, partial writes and the order of the Processed marker. CI also builds the Docker image.
 
 ## Current limits
 
