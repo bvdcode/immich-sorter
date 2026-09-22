@@ -30,6 +30,12 @@ export const editSchema = z.object({
   location: presetSchema.pick({ latitude: true, longitude: true }).optional(),
   date: z.object({ local: z.string(), timeZone: z.string().trim().min(1), offset: z.number().optional() }).optional(),
 });
+export const mapMarkerSchema = z.object({ id: z.uuid(), lat: z.number(), lon: z.number(),
+  city: z.string().nullable(), state: z.string().nullable(), country: z.string().nullable() });
+export const mapMarkersSchema = z.array(mapMarkerSchema);
+export const placeSchema = mapMarkerSchema.pick({ city: true, state: true, country: true });
+export const placesSchema = z.array(placeSchema);
+export const serverConfigSchema = z.object({ mapDarkStyleUrl: z.string(), mapLightStyleUrl: z.string() });
 export const bulkResultSchema = z.array(z.object({ id: z.uuid(), success: z.boolean(), error: z.string().optional() }));
 export const filtersSchema = z.object({ gps: z.boolean(), date: z.boolean(), album: z.boolean(),
   all: z.boolean(), includeProcessed: z.boolean(), type: z.enum(['ALL', 'IMAGE', 'VIDEO']) });
@@ -39,3 +45,4 @@ export type Session = z.infer<typeof sessionSchema>;
 export type Preset = z.infer<typeof presetSchema>;
 export type Edit = z.infer<typeof editSchema>;
 export type Filters = z.infer<typeof filtersSchema>;
+export type MapMarker = z.infer<typeof mapMarkerSchema>;

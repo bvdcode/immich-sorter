@@ -23,7 +23,7 @@ function currentMillis(item: ScheduleItem | undefined): number | null {
   return toMillis(item.current);
 }
 
-function compareText(left: string, right: string): number {
+export function compareText(left: string, right: string): number {
   if (left < right) { return -1; }
   if (left > right) { return 1; }
   return 0;
