@@ -6,11 +6,12 @@ import { api } from '@/lib/api';
 import { presetsSchema, type Preset } from '@/lib/contracts';
 import { useErrorText, useLocale } from './providers';
 
-export function PresetDialog({ open, close, onSaved }: { open: boolean; close: () => void; onSaved: (presets: Preset[], selected: Preset) => void }) {
+export function PresetDialog({ open, close, onSaved, initial }: { open: boolean; close: () => void;
+  onSaved: (presets: Preset[], selected: Preset) => void; initial: string }) {
   const { t } = useLocale();
   const errorText = useErrorText();
   const [name, setName] = useState('');
-  const [coordinates, setCoordinates] = useState('');
+  const [coordinates, setCoordinates] = useState(initial);
   const [timeZone, setTimeZone] = useState('');
   const save = useMutation({ mutationFn: async () => {
     const parts = coordinates.trim().split(/\s*,\s*/);

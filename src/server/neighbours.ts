@@ -1,9 +1,9 @@
 import { DateTime } from 'luxon';
 import type { Asset } from '@/lib/contracts';
+import type { NeighbourSource } from '@/lib/group-contracts';
 import { Immich } from './immich';
 import { Storage } from './storage';
 
-export type NeighbourSource = 'similar' | 'time' | 'filename';
 export const NEIGHBOUR_LIMIT = 24;
 
 function usable(items: Asset[], seed: Asset) {

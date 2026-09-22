@@ -85,6 +85,6 @@ export function Editor({ detail, instance, advance, reload }: { detail: Detail; 
         <Typography variant="caption" color="text.secondary">{t('processedHint')}</Typography>
       </Stack>
     </Paper>
-    {placeOpen && <PresetDialog open close={() => setPlaceOpen(false)} onSaved={(values, selected) => { cache.setQueryData(['presets'], values); selectLocation(selected); }} />}
+    {placeOpen && <PresetDialog open initial="" close={() => setPlaceOpen(false)} onSaved={(values, selected) => { cache.setQueryData(['presets'], values); selectLocation(selected); }} />}
   </Stack>;
 }

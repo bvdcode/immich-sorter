@@ -7,6 +7,7 @@ const zone = z.string().trim().min(1).max(100);
 const local = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
 const offset = z.number().int().min(-1080).max(1080).optional();
 
+export const neighbourSourceSchema = z.enum(['similar', 'time', 'filename']);
 export const orderingSchema = z.enum(['byFilename', 'byDate']);
 export const strategySchema = z.enum(['shift', 'step', 'span']);
 export const locationValueSchema = z.object({
@@ -56,6 +57,7 @@ export const groupResultSchema = z.object({
   processed: z.array(z.uuid()), failed: z.array(z.object({ id: z.uuid(), error: z.string() })),
 });
 
+export type NeighbourSource = z.infer<typeof neighbourSourceSchema>;
 export type Ordering = z.infer<typeof orderingSchema>;
 export type Strategy = z.infer<typeof strategySchema>;
 export type LocationValue = z.infer<typeof locationValueSchema>;
