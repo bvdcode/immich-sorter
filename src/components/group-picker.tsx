@@ -14,11 +14,12 @@ function hasLocation(asset: Asset) {
 }
 
 export function GroupPicker({ pool, selected, source, windowDays, pending, loading, error,
-  canLoadMore, onLoadMore, onSelected, onSource, onWindow }: {
+  canLoadMore, onLoadMore, onSelected, onSource, onWindow, bounds, startId, endId, onBound }: {
   pool: Asset[]; selected: Set<string>; source: NeighbourSource; windowDays: number;
   pending: boolean; loading: boolean; error: Error | null; canLoadMore: boolean; onLoadMore: () => void;
   onSelected: (value: Set<string>) => void;
   onSource: (value: NeighbourSource) => void; onWindow: (value: number) => void;
+  bounds: boolean; startId: string; endId: string; onBound: (kind: 'start' | 'end', asset: Asset) => void;
 }) {
   const { t } = useLocale();
   const errorText = useErrorText();
@@ -63,7 +64,8 @@ export function GroupPicker({ pool, selected, source, windowDays, pending, loadi
     {error && <Alert severity="error">{errorText(error)}</Alert>}
     <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1.5 }}>
       {pool.map((item, index) => <Card key={item.id} variant="outlined"
-        sx={{ position: 'relative', minWidth: 0, flex: { xs: '1 1 45%', sm: '1 1 30%', lg: '1 1 22%', xl: '1 1 15%' },
+        sx={{ position: 'relative', minWidth: 0, display: 'flex', flexDirection: 'column',
+          flex: { xs: '1 1 45%', sm: '1 1 30%', lg: '1 1 22%', xl: '1 1 15%' },
           maxWidth: { xs: 'calc(50% - 6px)', sm: 'calc(33% - 8px)', lg: 'calc(25% - 9px)', xl: 'calc(16.6% - 10px)' },
           borderColor: selected.has(item.id) ? 'primary.main' : 'divider' }}>
         <CardActionArea onClick={(event) => choose(index, event.shiftKey)}
@@ -83,6 +85,12 @@ export function GroupPicker({ pool, selected, source, windowDays, pending, loadi
         </CardActionArea>
         <Checkbox checked={selected.has(item.id)} tabIndex={-1} disableRipple
           sx={{ position: 'absolute', top: 4, right: 4, bgcolor: 'background.paper', borderRadius: 1, pointerEvents: 'none' }} />
+        {bounds && <Stack direction="row" sx={{ mt: 'auto', borderTop: 1, borderColor: 'divider' }}>
+          <Button fullWidth size="small" variant={startId === item.id ? 'contained' : 'text'}
+            onClick={() => onBound('start', item)}>{t('boundFrom')}</Button>
+          <Button fullWidth size="small" variant={endId === item.id ? 'contained' : 'text'}
+            onClick={() => onBound('end', item)}>{t('boundTo')}</Button>
+        </Stack>}
       </Card>)}
     </Stack>
     {!pending && pool.length <= 1 && <Typography color="text.secondary">{t('noCandidates')}</Typography>}

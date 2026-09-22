@@ -9,12 +9,13 @@ import { groupPlanSchema, groupResultSchema,
 import type { MessageKey } from '@/lib/messages';
 import { useErrorText, useLocale } from './providers';
 import { AlbumPicker } from './album-picker';
-import { GroupDate, dateDraftIssues, emptyDateDraft, toDateIntent } from './group-date';
+import { GroupDate, dateDraftIssues, toDateIntent, type GroupDateDraft } from './group-date';
 import { GroupLocation } from './group-location';
 import { GroupPreviewDialog } from './group-preview';
 
-export function GroupEditor({ group, zone, onApplied }: {
-  group: Asset[]; zone: string; onApplied: (result: GroupResult) => void;
+export function GroupEditor({ group, date, onDate, onApplied }: {
+  group: Asset[]; date: GroupDateDraft; onDate: (value: GroupDateDraft) => void;
+  onApplied: (result: GroupResult) => void;
 }) {
   const { t } = useLocale();
   const errorText = useErrorText();
@@ -22,7 +23,6 @@ export function GroupEditor({ group, zone, onApplied }: {
   const [location, setLocation] = useState<LocationValue | null>(null);
   const [locationLabel, setLocationLabel] = useState('');
   const [overwriteLocation, setOverwriteLocation] = useState(false);
-  const [date, setDate] = useState(emptyDateDraft(zone));
   const [albums, setAlbums] = useState<Album[]>([]);
   const [description, setDescription] = useState('');
   const [overwriteDescription, setOverwriteDescription] = useState(false);
@@ -65,9 +65,9 @@ export function GroupEditor({ group, zone, onApplied }: {
     <Stack spacing={3} component="fieldset" disabled={busy} sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}>
       <GroupLocation group={group} value={location} label={locationLabel} overwrite={overwriteLocation}
         onChange={(value, label) => { setLocation(value); setLocationLabel(label); }}
-        onOverwrite={setOverwriteLocation} onZone={(value) => setDate((draft) => ({ ...draft, zone: value }))} />
+        onOverwrite={setOverwriteLocation} onZone={(value) => onDate({ ...date, zone: value })} />
       <Divider />
-      <GroupDate group={group} value={date} onChange={setDate} />
+      <GroupDate group={group} value={date} onChange={onDate} />
       <Divider />
       <AlbumPicker albums={known.data ?? []} existing={[]} selected={albums} onChange={setAlbums}
         onCreated={(album) => { cache.setQueryData(['albums'], [...(known.data ?? []), album]); }} />

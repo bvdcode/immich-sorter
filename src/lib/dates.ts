@@ -20,6 +20,24 @@ export function dateNeedsReview(asset: Asset): boolean {
   return !current.isValid || Math.abs(current.toMillis() - DateTime.fromISO(parsed, { zone: 'UTC' }).toMillis()) > 86400000;
 }
 
+export function fixedZone(minutes: number): string {
+  const sign = minutes < 0 ? '-' : '+';
+  const total = Math.abs(minutes);
+  const rest = total % 60;
+  return `UTC${sign}${Math.floor(total / 60)}${rest === 0 ? '' : `:${String(rest).padStart(2, '0')}`}`;
+}
+
+export function zoneOf(asset: Asset): string | null {
+  const named = asset.exifInfo?.timeZone;
+  if (named) { return named; }
+  const wall = Date.parse(`${asset.localDateTime.slice(0, 19)}Z`);
+  const instant = Date.parse(asset.fileCreatedAt);
+  if (!Number.isFinite(wall) || !Number.isFinite(instant)) { return null; }
+  const minutes = Math.round((wall - instant) / 60000);
+  if (Math.abs(minutes) > 16 * 60) { return null; }
+  return fixedZone(minutes);
+}
+
 export function tryResolveDate(local: string, zone: string, offset?: number): DateResolution {
   const date = DateTime.fromISO(local, { zone });
   if (!date.isValid || date.toFormat(LOCAL_FORMAT) !== local) { return { ok: false, reason: 'invalidDate' }; }

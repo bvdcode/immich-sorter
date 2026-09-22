@@ -147,7 +147,7 @@ async function handle(request: Request, context: Context) {
     if (message === 'invalidOrigin') { return json({ error: message }, 403); }
     const publicErrors = new Set(['invalidInstance',
       'invalidDate', 'ambiguousDate', 'albumWriteFailed', 'duplicateProcessed', 'verificationFailed',
-      'indexRequired', 'anchorMissing', 'noChanges']);
+      'indexRequired', 'anchorMissing', 'noChanges', 'spanBackwards']);
     if (publicErrors.has(message)) { return json({ error: message }, 400); }
     if (/^upstream:\d{3}$/.test(message)) { return json({ error: message }, 502); }
     return json({ error: 'requestFailed' }, 502);

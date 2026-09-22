@@ -4,6 +4,8 @@ import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { enUS, ruRU } from '@mui/material/locale';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { languages, type Language, type MessageKey } from '@/lib/messages';
 
 const theme = createTheme({
@@ -27,9 +29,11 @@ export function Providers({ children, initialLanguage }: { children: React.React
     document.documentElement.lang = value;
   }
   return <AppRouterCacheProvider><ThemeProvider theme={themes[language]}><CssBaseline />
-    <QueryClientProvider client={queryClient}><LocaleContext.Provider value={{ language, setLanguage, t: (key) => languages[language][key] }}>
-      {children}
-    </LocaleContext.Provider></QueryClientProvider>
+    <LocalizationProvider dateAdapter={AdapterLuxon}>
+      <QueryClientProvider client={queryClient}><LocaleContext.Provider value={{ language, setLanguage, t: (key) => languages[language][key] }}>
+        {children}
+      </LocaleContext.Provider></QueryClientProvider>
+    </LocalizationProvider>
   </ThemeProvider></AppRouterCacheProvider>;
 }
 export function useLocale() {

@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Button, LinearProgress, Paper, Stack, Typography } from '@mui/material';
 import { api, candidatesSchema, queueSchema } from '@/lib/api';
-import type { Filters } from '@/lib/contracts';
+import type { Asset, Filters } from '@/lib/contracts';
 import { NEIGHBOUR_MAX, NEIGHBOUR_PAGE, type GroupResult, type NeighbourSource } from '@/lib/group-contracts';
 import { GroupEditor } from './group-editor';
+import { emptyDateDraft, withBound, type GroupDateDraft } from './group-date';
 import { GroupPicker } from './group-picker';
 import { useErrorText, useLocale } from './providers';
 
@@ -19,6 +20,8 @@ export function GroupWorkspace({ filters, instance }: { filters: Filters; instan
   const [windowDays, setWindowDays] = useState(3);
   const [selection, setSelection] = useState<{ seedId: string | null; ids: Set<string> }>({ seedId: null, ids: new Set() });
   const [paging, setPaging] = useState({ key: '', count: NEIGHBOUR_PAGE });
+  const [dates, setDates] = useState<{ seedId: string | null; draft: GroupDateDraft }>(
+    { seedId: null, draft: emptyDateDraft('') });
   const [result, setResult] = useState<GroupResult | null>(null);
   const queue = useQuery({ queryKey: ['queue', filters, after], staleTime: Infinity,
     queryFn: () => api('queue', queueSchema, { filters, after }) });
@@ -31,6 +34,7 @@ export function GroupWorkspace({ filters, instance }: { filters: Filters; instan
     queryFn: () => api(`candidates?id=${seedId}&source=${source}&window=${windowDays}&count=${count}`, candidatesSchema) });
 
   const selected = selection.seedId === seedId ? selection.ids : new Set(seedId === null ? [] : [seedId]);
+  const date = dates.seedId === seedId ? dates.draft : emptyDateDraft(seed?.exifInfo?.timeZone ?? '');
 
   function restart() {
     void cache.invalidateQueries({ queryKey: ['queue'] });
@@ -48,6 +52,8 @@ export function GroupWorkspace({ filters, instance }: { filters: Filters; instan
     restart();
   }
   function choose(ids: Set<string>) { setSelection({ seedId, ids }); }
+  function changeDate(draft: GroupDateDraft) { setDates({ seedId, draft }); }
+  function pickBound(kind: 'start' | 'end', asset: Asset) { changeDate(withBound(date, kind, asset)); }
   function loadMore() { setPaging({ key: pageKey, count: Math.min(count + NEIGHBOUR_PAGE, NEIGHBOUR_MAX) }); }
 
   if (queue.isPending) { return <LinearProgress />; }
@@ -92,10 +98,11 @@ export function GroupWorkspace({ filters, instance }: { filters: Filters; instan
         <GroupPicker pool={pool} selected={selected} source={source} windowDays={windowDays}
           pending={candidates.isPending} loading={candidates.isFetching} error={candidates.error}
           canLoadMore={(candidates.data?.items.length ?? 0) >= count && count < NEIGHBOUR_MAX}
-          onLoadMore={loadMore} onSelected={choose} onSource={setSource} onWindow={setWindowDays} />
+          onLoadMore={loadMore} onSelected={choose} onSource={setSource} onWindow={setWindowDays}
+          bounds={date.enabled} startId={date.startId} endId={date.endId} onBound={pickBound} />
       </Stack>
       <Box sx={{ width: { xs: '100%', lg: 440 }, flexShrink: 0, position: { lg: 'sticky' }, top: 24 }}>
-        <GroupEditor key={seed.id} group={group} zone={seed.exifInfo?.timeZone ?? ''} onApplied={applied} />
+        <GroupEditor key={seed.id} group={group} date={date} onDate={changeDate} onApplied={applied} />
       </Box>
     </Stack>
   </Stack>;

@@ -68,7 +68,7 @@ it('gives a single frame the start of the span', () => {
 it('rejects a span that ends before it starts', () => {
   expect(() => distribute(frames,
     { strategy: 'span', ordering: 'byFilename', startLocal: '2019-06-01T13:00:00', endLocal: '2019-06-01T12:00:00' }))
-    .toThrow('invalidDate');
+    .toThrow('spanBackwards');
 });
 
 it('orders undated frames after dated ones', () => {

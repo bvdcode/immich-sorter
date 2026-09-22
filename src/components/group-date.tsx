@@ -2,22 +2,33 @@
 import { Autocomplete, Button, FormControlLabel, MenuItem, Stack, Switch, TextField,
   ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import type { Asset } from '@/lib/contracts';
-import { parseFilename } from '@/lib/dates';
+import { parseFilename, zoneOf } from '@/lib/dates';
 import { DEFAULT_STEP_SECONDS, orderingSchema, strategySchema,
   type DateIntent, type Ordering, type Strategy } from '@/lib/group-contracts';
 import type { MessageKey } from '@/lib/messages';
 import { useLocale } from './providers';
+import { LocalTimeField } from './local-time-field';
 
 export type GroupDateDraft = {
   enabled: boolean; strategy: Strategy; ordering: Ordering; keepSettled: boolean;
-  anchorId: string; anchorLocal: string; startLocal: string; endLocal: string;
+  anchorId: string; anchorLocal: string;
+  startId: string; startLocal: string; endId: string; endLocal: string;
   stepSeconds: string; zone: string; offset: string;
 };
 
 export function emptyDateDraft(zone: string): GroupDateDraft {
-  return { enabled: false, strategy: 'shift', ordering: 'byFilename', keepSettled: false,
-    anchorId: '', anchorLocal: '', startLocal: '', endLocal: '',
+  return { enabled: false, strategy: 'span', ordering: 'byFilename', keepSettled: false,
+    anchorId: '', anchorLocal: '', startId: '', startLocal: '', endId: '', endLocal: '',
     stepSeconds: String(DEFAULT_STEP_SECONDS), zone, offset: '' };
+}
+
+export function withBound(draft: GroupDateDraft, kind: 'start' | 'end', asset: Asset): GroupDateDraft {
+  const local = asset.localDateTime.slice(0, 19);
+  const base: GroupDateDraft = { ...draft, enabled: true, strategy: 'span', zone: zoneOf(asset) ?? draft.zone };
+  switch (kind) {
+    case 'start': return { ...base, startId: asset.id, startLocal: local };
+    case 'end': return { ...base, endId: asset.id, endLocal: local };
+  }
 }
 
 export function toDateIntent(draft: GroupDateDraft): DateIntent | undefined {
@@ -47,6 +58,7 @@ export function dateDraftIssues(draft: GroupDateDraft): MessageKey[] {
       break;
     case 'span':
       if (draft.startLocal === '' || draft.endLocal === '') { issues.push('needSpan'); }
+      else if (draft.endLocal < draft.startLocal) { issues.push('spanBackwards'); }
       break;
   }
   return issues;
@@ -59,8 +71,6 @@ function hintFor(strategy: Strategy): MessageKey {
     case 'span': return 'strategySpanHint';
   }
 }
-
-function seconds(raw: string) { return raw.length === 16 ? `${raw}:00` : raw; }
 
 export function GroupDate({ group, value, onChange }: {
   group: Asset[]; value: GroupDateDraft; onChange: (value: GroupDateDraft) => void;
@@ -82,9 +92,9 @@ export function GroupDate({ group, value, onChange }: {
         onChange={(_, chosen) => {
           if (chosen !== null) { onChange({ ...value, strategy: strategySchema.parse(chosen) }); }
         }}>
-        <ToggleButton value="shift">{t('strategyShift')}</ToggleButton>
-        <ToggleButton value="step">{t('strategyStep')}</ToggleButton>
         <ToggleButton value="span">{t('strategySpan')}</ToggleButton>
+        <ToggleButton value="step">{t('strategyStep')}</ToggleButton>
+        <ToggleButton value="shift">{t('strategyShift')}</ToggleButton>
       </ToggleButtonGroup>
       <Typography variant="caption" color="text.secondary">{t(hintFor(value.strategy))}</Typography>
       {needsAnchor && <>
@@ -94,9 +104,8 @@ export function GroupDate({ group, value, onChange }: {
             {asset.originalFileName} · {asset.localDateTime.slice(0, 19).replace('T', ' ')}
           </MenuItem>)}
         </TextField>
-        <TextField label={t('anchorTime')} type="datetime-local" value={value.anchorLocal}
-          slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1 } }}
-          onChange={(event) => onChange({ ...value, anchorLocal: seconds(event.target.value) })} />
+        <LocalTimeField label={t('anchorTime')} value={value.anchorLocal}
+          onChange={(anchorLocal) => onChange({ ...value, anchorLocal })} />
         <Button size="small" disabled={fromName === null} sx={{ alignSelf: 'flex-start' }}
           onClick={() => { if (fromName) { onChange({ ...value, anchorLocal: fromName }); } }}>
           {t('parseDate')}{fromName ? ` · ${fromName.replace('T', ' ')}` : ''}
@@ -105,12 +114,11 @@ export function GroupDate({ group, value, onChange }: {
       {value.strategy === 'step' && <TextField label={t('stepSeconds')} type="number" value={value.stepSeconds}
         onChange={(event) => onChange({ ...value, stepSeconds: event.target.value })} />}
       {value.strategy === 'span' && <>
-        <TextField label={t('startTime')} type="datetime-local" value={value.startLocal}
-          slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1 } }}
-          onChange={(event) => onChange({ ...value, startLocal: seconds(event.target.value) })} />
-        <TextField label={t('endTime')} type="datetime-local" value={value.endLocal}
-          slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1 } }}
-          onChange={(event) => onChange({ ...value, endLocal: seconds(event.target.value) })} />
+        <LocalTimeField label={t('startTime')} value={value.startLocal}
+          onChange={(startLocal) => onChange({ ...value, startLocal, startId: '' })} />
+        <LocalTimeField label={t('endTime')} value={value.endLocal}
+          onChange={(endLocal) => onChange({ ...value, endLocal, endId: '' })} />
+        <Typography variant="caption" color="text.secondary">{t('boundHint')}</Typography>
       </>}
       {needsOrder && <>
         <TextField select label={t('frameOrder')} value={value.ordering}
@@ -122,7 +130,7 @@ export function GroupDate({ group, value, onChange }: {
       </>}
       <Autocomplete freeSolo options={Intl.supportedValuesOf('timeZone')} inputValue={value.zone}
         onInputChange={(_, zone) => onChange({ ...value, zone })}
-        renderInput={(params) => <TextField {...params} label={t('timezone')} helperText={t('timezoneHint')} />} />
+        renderInput={(params) => <TextField {...params} label={t('timezone')} helperText={t('groupZoneHint')} />} />
       <TextField label={t('offset')} type="number" value={value.offset} placeholder={t('optional')}
         onChange={(event) => onChange({ ...value, offset: event.target.value })} />
       <FormControlLabel label={t('keepSettledDates')}

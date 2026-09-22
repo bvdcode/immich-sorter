@@ -3,6 +3,7 @@ import { Autocomplete, Button, FormControlLabel, Stack, Switch, TextField, Typog
 import type { Asset } from '@/lib/contracts';
 import { parseFilename } from '@/lib/dates';
 import { useLocale } from './providers';
+import { LocalTimeField } from './local-time-field';
 
 export type DateDraft = { enabled: boolean; local: string; zone: string; offset: string };
 export function DateEditor({ asset, value, onChange }: { asset: Asset; value: DateDraft; onChange: (value: DateDraft) => void }) {
@@ -18,8 +19,7 @@ export function DateEditor({ asset, value, onChange }: { asset: Asset; value: Da
       {t('parseDate')}{parsed ? ` · ${parsed.replace('T', ' ')}` : ''}
     </Button>
     {value.enabled && <>
-      <TextField label={t('localDate')} type="datetime-local" value={value.local} slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1 } }}
-        onChange={(e) => onChange({ ...value, local: e.target.value.length === 16 ? `${e.target.value}:00` : e.target.value })} />
+      <LocalTimeField label={t('localDate')} value={value.local} onChange={(local) => onChange({ ...value, local })} />
       <Autocomplete freeSolo options={Intl.supportedValuesOf('timeZone')} inputValue={value.zone}
         onInputChange={(_, zone) => onChange({ ...value, zone })} renderInput={(params) => <TextField {...params} label={t('timezone')} helperText={t('timezoneHint')} />} />
       <TextField label={t('offset')} type="number" value={value.offset} placeholder={t('optional')} onChange={(e) => onChange({ ...value, offset: e.target.value })} />

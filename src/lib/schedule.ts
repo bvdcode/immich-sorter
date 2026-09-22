@@ -78,7 +78,7 @@ function span(items: ScheduleItem[], plan: SpanPlan): Schedule {
   const start = toMillis(plan.startLocal);
   const end = toMillis(plan.endLocal);
   if (start === null || end === null) { throw new Error('anchorMissing'); }
-  if (end < start) { throw new Error('invalidDate'); }
+  if (end < start) { throw new Error('spanBackwards'); }
   const assigned = new Map<string, string>();
   const last = sorted.length - 1;
   sorted.forEach((item, index) => {
