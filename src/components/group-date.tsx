@@ -9,13 +9,13 @@ import type { MessageKey } from '@/lib/messages';
 import { useLocale } from './providers';
 
 export type GroupDateDraft = {
-  enabled: boolean; strategy: Strategy; ordering: Ordering; overwrite: boolean;
+  enabled: boolean; strategy: Strategy; ordering: Ordering; keepSettled: boolean;
   anchorId: string; anchorLocal: string; startLocal: string; endLocal: string;
   stepSeconds: string; zone: string; offset: string;
 };
 
 export function emptyDateDraft(zone: string): GroupDateDraft {
-  return { enabled: false, strategy: 'shift', ordering: 'byFilename', overwrite: false,
+  return { enabled: false, strategy: 'shift', ordering: 'byFilename', keepSettled: false,
     anchorId: '', anchorLocal: '', startLocal: '', endLocal: '',
     stepSeconds: String(DEFAULT_STEP_SECONDS), zone, offset: '' };
 }
@@ -33,14 +33,23 @@ export function toDateIntent(draft: GroupDateDraft): DateIntent | undefined {
   }
 }
 
-export function dateDraftReady(draft: GroupDateDraft): boolean {
-  if (!draft.enabled) { return true; }
-  if (draft.zone.trim() === '') { return false; }
+export function dateDraftIssues(draft: GroupDateDraft): MessageKey[] {
+  if (!draft.enabled) { return []; }
+  const issues: MessageKey[] = [];
+  if (draft.zone.trim() === '') { issues.push('needZone'); }
   switch (draft.strategy) {
-    case 'shift': return draft.anchorId !== '' && draft.anchorLocal !== '';
-    case 'step': return draft.anchorId !== '' && draft.anchorLocal !== '' && Number(draft.stepSeconds) > 0;
-    case 'span': return draft.startLocal !== '' && draft.endLocal !== '';
+    case 'shift':
+      if (draft.anchorId === '' || draft.anchorLocal === '') { issues.push('needAnchor'); }
+      break;
+    case 'step':
+      if (draft.anchorId === '' || draft.anchorLocal === '') { issues.push('needAnchor'); }
+      if (!(Number(draft.stepSeconds) > 0)) { issues.push('needStep'); }
+      break;
+    case 'span':
+      if (draft.startLocal === '' || draft.endLocal === '') { issues.push('needSpan'); }
+      break;
   }
+  return issues;
 }
 
 function hintFor(strategy: Strategy): MessageKey {
@@ -116,8 +125,8 @@ export function GroupDate({ group, value, onChange }: {
         renderInput={(params) => <TextField {...params} label={t('timezone')} helperText={t('timezoneHint')} />} />
       <TextField label={t('offset')} type="number" value={value.offset} placeholder={t('optional')}
         onChange={(event) => onChange({ ...value, offset: event.target.value })} />
-      <FormControlLabel label={t('overwriteDate')}
-        control={<Switch checked={value.overwrite} onChange={(_, overwrite) => onChange({ ...value, overwrite })} />} />
+      <FormControlLabel label={t('keepSettledDates')}
+        control={<Switch checked={value.keepSettled} onChange={(_, keepSettled) => onChange({ ...value, keepSettled })} />} />
     </>}
   </Stack>;
 }

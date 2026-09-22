@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Map, { Marker, NavigationControl, type MapLayerMouseEvent, type MarkerEvent } from 'react-map-gl/maplibre';
 import { setWorkerUrl } from 'maplibre-gl';
+import tzLookup from 'tz-lookup';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress,
   MenuItem, Stack, TextField, Typography, useMediaQuery, useTheme } from '@mui/material';
@@ -44,7 +45,7 @@ function located(assets: Asset[]): LocationValue[] {
 }
 
 export function MapDialog({ assets, close, onPick }: {
-  assets: Asset[]; close: () => void; onPick: (value: LocationValue, label: string) => void;
+  assets: Asset[]; close: () => void; onPick: (value: LocationValue, label: string, zone: string) => void;
 }) {
   const { t } = useLocale();
   const errorText = useErrorText();
@@ -98,15 +99,21 @@ export function MapDialog({ assets, close, onPick }: {
           </Map>
         </Box>}
         {!loading && shown.length === 0 && <Alert severity="info">{t('mapEmpty')}</Alert>}
-        {point && <Typography variant="body2">
-          {t('chosenPoint')}: {point.latitude.toFixed(6)}, {point.longitude.toFixed(6)} {label}
-        </Typography>}
+        {point && <Stack spacing={0.5}>
+          <Typography variant="body2">
+            {t('chosenPoint')}: {point.latitude.toFixed(6)}, {point.longitude.toFixed(6)} {label}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {t('timezone')}: {tzLookup(point.latitude, point.longitude)}
+          </Typography>
+        </Stack>}
       </Stack>
     </DialogContent>
     <DialogActions>
       <Button onClick={close}>{t('cancel')}</Button>
       <Button variant="contained" disabled={point === null}
-        onClick={() => { if (point) { onPick(point, label); } }}>{t('useThisPoint')}</Button>
+        onClick={() => { if (point) { onPick(point, label, tzLookup(point.latitude, point.longitude)); } }}>
+        {t('useThisPoint')}</Button>
     </DialogActions>
   </Dialog>;
 }

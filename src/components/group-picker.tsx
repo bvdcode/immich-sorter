@@ -13,9 +13,11 @@ function hasLocation(asset: Asset) {
   return asset.exifInfo?.latitude != null && asset.exifInfo?.longitude != null;
 }
 
-export function GroupPicker({ pool, selected, source, windowDays, pending, error, onSelected, onSource, onWindow }: {
+export function GroupPicker({ pool, selected, source, windowDays, pending, loading, error,
+  canLoadMore, onLoadMore, onSelected, onSource, onWindow }: {
   pool: Asset[]; selected: Set<string>; source: NeighbourSource; windowDays: number;
-  pending: boolean; error: Error | null; onSelected: (value: Set<string>) => void;
+  pending: boolean; loading: boolean; error: Error | null; canLoadMore: boolean; onLoadMore: () => void;
+  onSelected: (value: Set<string>) => void;
   onSource: (value: NeighbourSource) => void; onWindow: (value: number) => void;
 }) {
   const { t } = useLocale();
@@ -84,5 +86,8 @@ export function GroupPicker({ pool, selected, source, windowDays, pending, error
       </Card>)}
     </Stack>
     {!pending && pool.length <= 1 && <Typography color="text.secondary">{t('noCandidates')}</Typography>}
+    {canLoadMore && <Button variant="outlined" disabled={loading} onClick={onLoadMore} sx={{ alignSelf: 'center' }}>
+      {loading ? t('loading') : t('loadMore')}
+    </Button>}
   </Stack>;
 }

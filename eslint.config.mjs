@@ -4,7 +4,7 @@ import nextTs from 'eslint-config-next/typescript';
 import tseslint from 'typescript-eslint';
 export default defineConfig([
   ...nextVitals, ...nextTs,
-  globalIgnores(['.next/**', 'node_modules/**', '.vs/**', 'notes/**', 'next-env.d.ts']),
+  globalIgnores(['.next/**', 'node_modules/**', '.vs/**', 'notes/**', 'public/**', 'next-env.d.ts']),
   { files: ['src/**/*.ts', 'src/**/*.tsx', 'tests/**/*.ts'],
     languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
     plugins: { typed: tseslint.plugin },

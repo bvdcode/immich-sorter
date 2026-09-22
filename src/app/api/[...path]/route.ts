@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { connectionSchema, editSchema, filtersSchema, presetSchema, presetsSchema } from '@/lib/contracts';
-import { groupApplySchema, groupIntentSchema, neighbourSourceSchema } from '@/lib/group-contracts';
+import { groupApplySchema, groupIntentSchema, neighbourSourceSchema,
+  NEIGHBOUR_MAX, NEIGHBOUR_PAGE } from '@/lib/group-contracts';
 import { Immich, albumNameSchema } from '@/server/immich';
 import { normalizeInstance, openSession, requireWriteRequest, scopeFor, sealSession } from '@/server/security';
 import { Storage } from '@/server/storage';
@@ -53,7 +54,9 @@ async function dispatch(request: Request, context: Context) {
           const seed = await client.asset(z.uuid().parse(url.searchParams.get('id')));
           const source = neighbourSourceSchema.parse(url.searchParams.get('source'));
           const days = z.coerce.number().int().min(1).max(365).parse(url.searchParams.get('window') ?? '3');
-          return json({ items: await neighbours(client, db, source, seed, days) });
+          const count = z.coerce.number().int().min(1).max(NEIGHBOUR_MAX)
+            .parse(url.searchParams.get('count') ?? String(NEIGHBOUR_PAGE));
+          return json({ items: await neighbours(client, db, source, seed, days, count) });
         }
         case 'map/config': return json({ styleUrl: (await client.serverConfig()).mapDarkStyleUrl });
         case 'map/markers': {

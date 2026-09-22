@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 export const GROUP_LIMIT = 100;
+export const NEIGHBOUR_PAGE = 24;
+export const NEIGHBOUR_MAX = 240;
 export const DEFAULT_STEP_SECONDS = 30;
 
 const zone = z.string().trim().min(1).max(100);

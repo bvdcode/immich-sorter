@@ -6,9 +6,10 @@ import { api } from '@/lib/api';
 import { albumsSchema, type Album, type Asset } from '@/lib/contracts';
 import { groupPlanSchema, groupResultSchema,
   type GroupIntent, type GroupPlan, type GroupResult, type LocationValue } from '@/lib/group-contracts';
+import type { MessageKey } from '@/lib/messages';
 import { useErrorText, useLocale } from './providers';
 import { AlbumPicker } from './album-picker';
-import { GroupDate, dateDraftReady, emptyDateDraft, toDateIntent } from './group-date';
+import { GroupDate, dateDraftIssues, emptyDateDraft, toDateIntent } from './group-date';
 import { GroupLocation } from './group-location';
 import { GroupPreviewDialog } from './group-preview';
 
@@ -30,7 +31,7 @@ export function GroupEditor({ group, zone, onApplied }: {
 
   function buildIntent(): GroupIntent {
     const intent: GroupIntent = { assetIds: group.map((asset) => asset.id), albumIds: albums.map((album) => album.id),
-      overwrite: { location: overwriteLocation, date: date.overwrite, description: overwriteDescription } };
+      overwrite: { location: overwriteLocation, date: !date.keepSettled, description: overwriteDescription } };
     if (location) { intent.location = location; }
     const dates = toDateIntent(date);
     if (dates) { intent.date = dates; }
@@ -39,8 +40,12 @@ export function GroupEditor({ group, zone, onApplied }: {
     return intent;
   }
 
-  const ready = group.length > 0 && dateDraftReady(date)
-    && (location !== null || date.enabled || albums.length > 0 || description.trim() !== '');
+  const blockers: MessageKey[] = [...dateDraftIssues(date)];
+  if (group.length === 0) { blockers.unshift('groupEmpty'); }
+  if (location === null && !date.enabled && albums.length === 0 && description.trim() === '') {
+    blockers.push('nothingChosen');
+  }
+  const ready = blockers.length === 0;
 
   const preview = useMutation({ mutationFn: async () => {
     const intent = buildIntent();
@@ -73,11 +78,13 @@ export function GroupEditor({ group, zone, onApplied }: {
         {description.trim() !== '' && <FormControlLabel label={t('overwriteDescription')}
           control={<Switch checked={overwriteDescription} onChange={(_, value) => setOverwriteDescription(value)} />} />}
       </Stack>
-      {group.length === 0 && <Alert severity="info">{t('groupEmpty')}</Alert>}
       {(preview.error || known.error) && <Alert severity="error">{errorText(preview.error ?? known.error)}</Alert>}
       <Button fullWidth variant="contained" disabled={!ready || busy} onClick={() => preview.mutate()}>
         {preview.isPending ? t('loading') : `${t('previewChanges')} · ${group.length}`}
       </Button>
+      {blockers.length > 0 && <Stack spacing={0.5}>
+        {blockers.map((issue) => <Typography key={issue} variant="caption" color="warning.main">{t(issue)}</Typography>)}
+      </Stack>}
       <Typography variant="caption" color="text.secondary">{t('processedHint')}</Typography>
       {pending && <GroupPreviewDialog plan={pending.plan} albums={albums} applying={apply.isPending}
         error={apply.error} close={() => setPending(null)} onApply={() => apply.mutate()} />}

@@ -1,10 +1,10 @@
 'use client';
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Button, LinearProgress, Paper, Stack, Typography } from '@mui/material';
 import { api, candidatesSchema, queueSchema } from '@/lib/api';
 import type { Filters } from '@/lib/contracts';
-import type { GroupResult, NeighbourSource } from '@/lib/group-contracts';
+import { NEIGHBOUR_MAX, NEIGHBOUR_PAGE, type GroupResult, type NeighbourSource } from '@/lib/group-contracts';
 import { GroupEditor } from './group-editor';
 import { GroupPicker } from './group-picker';
 import { useErrorText, useLocale } from './providers';
@@ -18,13 +18,17 @@ export function GroupWorkspace({ filters, instance }: { filters: Filters; instan
   const [source, setSource] = useState<NeighbourSource>('time');
   const [windowDays, setWindowDays] = useState(3);
   const [selection, setSelection] = useState<{ seedId: string | null; ids: Set<string> }>({ seedId: null, ids: new Set() });
+  const [paging, setPaging] = useState({ key: '', count: NEIGHBOUR_PAGE });
   const [result, setResult] = useState<GroupResult | null>(null);
   const queue = useQuery({ queryKey: ['queue', filters, after], staleTime: Infinity,
     queryFn: () => api('queue', queueSchema, { filters, after }) });
   const seed = queue.data?.items[index]?.asset ?? null;
   const seedId = seed?.id ?? null;
-  const candidates = useQuery({ queryKey: ['candidates', seedId, source, windowDays], enabled: seedId !== null,
-    staleTime: 300000, queryFn: () => api(`candidates?id=${seedId}&source=${source}&window=${windowDays}`, candidatesSchema) });
+  const pageKey = `${seedId}/${source}/${windowDays}`;
+  const count = paging.key === pageKey ? paging.count : NEIGHBOUR_PAGE;
+  const candidates = useQuery({ queryKey: ['candidates', seedId, source, windowDays, count], enabled: seedId !== null,
+    staleTime: 300000, placeholderData: keepPreviousData,
+    queryFn: () => api(`candidates?id=${seedId}&source=${source}&window=${windowDays}&count=${count}`, candidatesSchema) });
 
   const selected = selection.seedId === seedId ? selection.ids : new Set(seedId === null ? [] : [seedId]);
 
@@ -44,6 +48,7 @@ export function GroupWorkspace({ filters, instance }: { filters: Filters; instan
     restart();
   }
   function choose(ids: Set<string>) { setSelection({ seedId, ids }); }
+  function loadMore() { setPaging({ key: pageKey, count: Math.min(count + NEIGHBOUR_PAGE, NEIGHBOUR_MAX) }); }
 
   if (queue.isPending) { return <LinearProgress />; }
   if (queue.error) {
@@ -85,8 +90,9 @@ export function GroupWorkspace({ filters, instance }: { filters: Filters; instan
         </Stack>
         <Typography variant="h6">{t('candidates')} · {t('selectedCount')} {group.length}</Typography>
         <GroupPicker pool={pool} selected={selected} source={source} windowDays={windowDays}
-          pending={candidates.isPending} error={candidates.error} onSelected={choose}
-          onSource={setSource} onWindow={setWindowDays} />
+          pending={candidates.isPending} loading={candidates.isFetching} error={candidates.error}
+          canLoadMore={(candidates.data?.items.length ?? 0) >= count && count < NEIGHBOUR_MAX}
+          onLoadMore={loadMore} onSelected={choose} onSource={setSource} onWindow={setWindowDays} />
       </Stack>
       <Box sx={{ width: { xs: '100%', lg: 440 }, flexShrink: 0, position: { lg: 'sticky' }, top: 24 }}>
         <GroupEditor key={seed.id} group={group} zone={seed.exifInfo?.timeZone ?? ''} onApplied={applied} />

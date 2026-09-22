@@ -45,9 +45,10 @@ export function GroupLocation({ group, value, label, overwrite, onChange, onOver
     onChange({ latitude: chosen.latitude, longitude: chosen.longitude }, chosen.name);
     onZone(chosen.timeZone);
   }
-  function fromMap(point: LocationValue, place: string) {
+  function fromMap(point: LocationValue, place: string, zone: string) {
     setFrameId(''); setPreset(null); setMapOpen(false);
     onChange(point, place);
+    onZone(zone);
   }
 
   return <Stack spacing={1.5}>
