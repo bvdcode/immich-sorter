@@ -39,7 +39,30 @@ docker run -d --name immich-sorter --restart unless-stopped \
   bvdcode/immich-sorter:latest
 ```
 
-## Review workflow
+## Group review
+
+Group review takes a whole event in one pass. The current frame is shown with its neighbours, found by visual
+similarity, by capture time within a chosen window, or by position in the library index. Clicking a frame adds it to
+the group and shift-clicking takes the whole run between two frames.
+
+One panel then sets the group's place, dates, albums and description. A place is picked from a map that opens on the
+area the group covers: every photo already placed around that time is drawn as a circle, and clicking one reuses its
+exact coordinates. Clicking anywhere else drops a free point, which is named by reverse geocoding and can be saved as
+a place for later. The map style comes from the Immich instance's own configuration.
+
+Dates are distributed across the group rather than copied. `Intervals` moves the whole run so one known-good frame
+lands on its correct time while every real gap is preserved. `Step` runs from an anchor frame at a fixed interval.
+`Range` spreads the group evenly between a first and a last time. Frame order is taken from filenames or from stored
+dates; filename order is the reliable one when a camera clock was wrong. A frame with no capture time is reported
+rather than given an invented one, and a local time that daylight saving skipped or repeated is reported per frame.
+
+Existing values are kept by default: a frame that already has coordinates, a date that no longer needs review, or a
+description that is already written is left alone unless the matching switch is turned on. Nothing is written until
+the preview lists, frame by frame, what changes and why a frame is skipped. Applying writes the group in the fewest
+requests the API allows, reads every frame back, and adds only the verified ones to `Processed`. A frame whose
+read-back does not match stays outside `Processed` and is reported.
+
+## Frame by frame
 
 The queue uses OR conditions: missing GPS, missing or suspicious date, or no album. Photos and videos can be filtered separately. Processed items are hidden by default. Rebuild the index after changing albums or metadata outside the application.
 
@@ -51,7 +74,7 @@ Full timestamps are recognized in names such as `IMG_20240529_151756.jpg` and `2
 
 ## Permissions
 
-The Immich key needs `user.read`, `asset.read`, `asset.view`, `asset.update`, `album.read`, `album.create`, and `albumAsset.create`. Access is limited to the account and assets available to that key. The application uses Immich's REST API, including paginated metadata search with EXIF. It never connects to the Immich database.
+The Immich key needs `user.read`, `asset.read`, `asset.view`, `asset.update`, `album.read`, `album.create`, `albumAsset.create`, `map.read`, and `map.search`. The two map permissions are used by group review to draw nearby photos on the map and to name a picked point. Access is limited to the account and assets available to that key. The application uses Immich's REST API, including paginated metadata search with EXIF. It never connects to the Immich database.
 
 ## Persistence and credentials
 
@@ -75,8 +98,8 @@ npm run build
 npm run typecheck
 ```
 
-Tests cover timestamp parsing, daylight-saving gaps and overlaps, filter semantics, connection isolation, encrypted sessions, write-origin protection, stale edits, partial writes and the order of the Processed marker. CI also builds the Docker image.
+Tests cover timestamp parsing, time distribution across a group, daylight-saving gaps and overlaps, skip and overwrite rules per field, request batching, filter semantics, connection isolation, encrypted sessions, write-origin protection, stale edits, partial writes and the order of the Processed marker. CI also builds the Docker image.
 
 ## Current limits
 
-Reviews operate on one item at a time. Indexing is driven by the open browser tab and can be paused between pages. Media cache and album membership are snapshots until refreshed; current asset metadata is checked before every save. There is no automatic rollback of partially completed remote writes. The edit journal records before and after values; failed writes stay outside Processed and require inspection. Automatic visual grouping and one-click undo are not implemented.
+A group holds up to 100 frames. Indexing is driven by the open browser tab and can be paused between pages. Media cache and album membership are snapshots until refreshed; current asset metadata is checked before every save. There is no automatic rollback of partially completed remote writes. The edit journal records before and after values; failed writes stay outside Processed and require inspection. One-click undo is not implemented. Map tiles are loaded by the browser from whichever style the Immich instance is configured with.
