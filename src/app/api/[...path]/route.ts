@@ -1,11 +1,14 @@
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { connectionSchema, editSchema, filtersSchema, presetSchema, presetsSchema } from '@/lib/contracts';
+import { groupApplySchema, groupIntentSchema } from '@/lib/group-contracts';
 import { Immich, albumNameSchema } from '@/server/immich';
 import { normalizeInstance, openSession, requireWriteRequest, scopeFor, sealSession } from '@/server/security';
 import { Storage } from '@/server/storage';
 import { syncSchema, syncStep } from '@/server/sync';
 import { revision, saveReview } from '@/server/review';
+import { applyGroup, previewGroup } from '@/server/group-apply';
+import { neighbours } from '@/server/neighbours';
 import { DateTime } from 'luxon';
 
 export const runtime = 'nodejs';
@@ -46,6 +49,24 @@ async function dispatch(request: Request, context: Context) {
         case 'albums': return json(await client.albums());
         case 'presets': return json(db.presets());
         case 'history': return json(db.history());
+        case 'candidates': {
+          const seed = await client.asset(z.uuid().parse(url.searchParams.get('id')));
+          const source = z.enum(['similar', 'time', 'filename']).parse(url.searchParams.get('source'));
+          const days = z.coerce.number().int().min(1).max(365).parse(url.searchParams.get('window') ?? '3');
+          return json({ items: await neighbours(client, db, source, seed, days) });
+        }
+        case 'map/config': return json({ styleUrl: (await client.serverConfig()).mapDarkStyleUrl });
+        case 'map/markers': {
+          const after = z.iso.datetime().parse(url.searchParams.get('from'));
+          const before = z.iso.datetime().parse(url.searchParams.get('to'));
+          return json({ markers: await client.mapMarkers(after, before) });
+        }
+        case 'map/place': {
+          const latitude = z.coerce.number().min(-90).max(90).parse(url.searchParams.get('lat'));
+          const longitude = z.coerce.number().min(-180).max(180).parse(url.searchParams.get('lon'));
+          const places = await client.reverseGeocode(latitude, longitude);
+          return json(places[0] ?? { city: null, state: null, country: null });
+        }
         case 'asset': {
           const id = z.uuid().parse(url.searchParams.get('id'));
           const [asset, albums] = await Promise.all([client.asset(id), client.albums(id)]);
@@ -85,6 +106,11 @@ async function dispatch(request: Request, context: Context) {
           return json(db.queue(input.filters, input.after));
         }
         case 'save': return json(await saveReview(client, db, editSchema.parse(body)));
+        case 'group/preview': return json(await previewGroup(client, groupIntentSchema.parse(body)));
+        case 'group/apply': {
+          const input = groupApplySchema.parse(body);
+          return json(await applyGroup(client, db, input.intent, input.revision));
+        }
         case 'albums': return json(await client.createAlbum(albumNameSchema.parse(body).name));
         case 'presets': {
           const input = z.object({ presets: presetsSchema }).parse(body);
@@ -117,7 +143,8 @@ async function handle(request: Request, context: Context) {
     if (message === 'conflict') { return json({ error: message }, 409); }
     if (message === 'invalidOrigin') { return json({ error: message }, 403); }
     const publicErrors = new Set(['invalidInstance',
-      'invalidDate', 'ambiguousDate', 'albumWriteFailed', 'duplicateProcessed', 'verificationFailed', 'indexRequired']);
+      'invalidDate', 'ambiguousDate', 'albumWriteFailed', 'duplicateProcessed', 'verificationFailed',
+      'indexRequired', 'anchorMissing', 'noChanges']);
     if (publicErrors.has(message)) { return json({ error: message }, 400); }
     if (/^upstream:\d{3}$/.test(message)) { return json({ error: message }, 502); }
     return json({ error: 'requestFailed' }, 502);

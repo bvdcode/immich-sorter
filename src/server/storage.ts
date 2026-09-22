@@ -68,6 +68,17 @@ export class Storage {
         cursor: `${asset.originalFileName}/${asset.id}` };
     }) };
   }
+  neighbours(assetId: string, limit: number) {
+    const row = this.db.prepare('SELECT filename FROM assets WHERE scope=? AND id=?').get(this.scope, assetId);
+    if (!row) { return []; }
+    const cursor = `${z.object({ filename: z.string() }).parse(row).filename}/${assetId}`;
+    const ahead = this.db.prepare(`SELECT json FROM assets WHERE scope=? AND filename || '/' || id > ?
+      ORDER BY filename,id LIMIT ?`).all(this.scope, cursor, limit);
+    const behind = this.db.prepare(`SELECT json FROM assets WHERE scope=? AND filename || '/' || id < ?
+      ORDER BY filename DESC,id DESC LIMIT ?`).all(this.scope, cursor, limit);
+    return [...behind.reverse(), ...ahead].map((entry) =>
+      assetSchema.parse(JSON.parse(z.object({ json: z.string() }).parse(entry).json)));
+  }
   get(key: string) {
     const row = this.db.prepare('SELECT json FROM settings WHERE scope=? AND key=?').get(this.scope, key);
     return row ? z.object({ json: z.string() }).parse(row).json : null;

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { albumSchema, assetSchema, filtersSchema } from './contracts';
+import { albumSchema, assetSchema, filtersSchema, mapMarkersSchema } from './contracts';
 import { WRITE_REQUEST_HEADER } from './request-headers';
 
 export const sessionInfoSchema = z.object({ connected: z.boolean(), instance: z.string(), name: z.string(), indexed: z.boolean(), count: z.number() });
@@ -8,6 +8,9 @@ export const queueItemSchema = z.object({ asset: assetSchema, noAlbum: z.boolean
 export const queueSchema = z.object({ total: z.number(), items: z.array(queueItemSchema) });
 export const syncInputSchema = z.object({ phase: z.enum(['assets', 'unalbumed', 'processed']), page: z.number(), markerId: z.string().nullable(), reset: z.boolean() });
 export const syncResultSchema = z.object({ done: z.boolean(), count: z.number(), next: syncInputSchema.nullable() });
+export const candidatesSchema = z.object({ items: z.array(assetSchema) });
+export const mapConfigSchema = z.object({ styleUrl: z.url() });
+export const markersSchema = z.object({ markers: mapMarkersSchema });
 export type Detail = z.infer<typeof detailSchema>;
 export type QueueItem = z.infer<typeof queueItemSchema>;
 export type SyncInput = z.infer<typeof syncInputSchema>;
